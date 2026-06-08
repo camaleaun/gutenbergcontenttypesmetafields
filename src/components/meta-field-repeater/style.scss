@@ -1,0 +1,156 @@
+// ---- Repeater wrapper -------------------------------------------------------
+.mf-repeater {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+
+	&__empty {
+		color: var(--wp-components-color-gray-700, #757575);
+		font-style: italic;
+		margin: 0;
+		padding: 16px 0;
+	}
+
+	&__add {
+		align-self: flex-start;
+		margin-top: 4px;
+	}
+}
+
+// ---- Field item -------------------------------------------------------------
+.mf-field-item {
+	border: 1px solid var(--wp-components-color-gray-300, #ddd);
+	border-radius: 2px;
+	background: #fff;
+	transition: box-shadow 0.1s ease;
+
+	&.is-dragging {
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		z-index: 10;
+	}
+
+	// ---- Header
+	&__header {
+		display: flex;
+		align-items: center;
+		gap: 0;
+		background: var(--wp-components-color-gray-100, #f6f7f7);
+		border-bottom: 1px solid transparent;
+		border-radius: 2px 2px 0 0;
+
+		.mf-field-item:not(:has(.mf-field-item__body)) & {
+			border-bottom-color: transparent;
+			border-radius: 2px;
+		}
+	}
+
+	&__drag-handle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 40px;
+		border: none;
+		background: transparent;
+		cursor: grab;
+		color: var(--wp-components-color-gray-600, #949494);
+		flex-shrink: 0;
+		border-radius: 2px 0 0 0;
+		padding: 0;
+
+		&:active { cursor: grabbing; }
+		&:focus-visible {
+			outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+			outline-offset: -2px;
+		}
+	}
+
+	&__toggle {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		border: none;
+		background: transparent;
+		cursor: pointer;
+		padding: 8px 8px 8px 4px;
+		text-align: left;
+		min-width: 0;
+
+		&:focus-visible {
+			outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+			outline-offset: -2px;
+		}
+	}
+
+	&__toggle-label {
+		font-weight: 600;
+		font-size: 13px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		flex-shrink: 1;
+		min-width: 0;
+	}
+
+	&__toggle-meta {
+		font-size: 12px;
+		color: var(--wp-components-color-gray-700, #757575);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		flex-shrink: 2;
+		min-width: 0;
+	}
+
+	&__chevron {
+		flex-shrink: 0;
+		color: var(--wp-components-color-gray-700, #757575);
+		transition: transform 0.15s ease;
+		margin-left: auto;
+
+		&.is-open {
+			transform: rotate(180deg);
+		}
+	}
+
+	&__header-actions {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		padding: 0 6px 0 4px;
+		flex-shrink: 0;
+	}
+
+	&__btn-conditional {
+		&.is-active {
+			color: var(--wp-admin-theme-color, #3858e9);
+		}
+	}
+
+	// ---- Body
+	&__body {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		padding: 16px;
+	}
+
+	&__row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 16px;
+		align-items: start;
+
+		&--narrow {
+			grid-template-columns: 1fr auto;
+			align-items: center;
+		}
+	}
+}
+
+// Required asterisk
+.mf-required {
+	color: #cc1818;
+	margin-right: 2px;
+}

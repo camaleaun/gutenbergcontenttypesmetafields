@@ -1,0 +1,59 @@
+.mf-conditional-modal {
+	.mf-conditional-modal__body {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		padding-bottom: 8px;
+	}
+
+	.mf-conditional-modal__rules {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.mf-conditional-modal__rule {
+		display: flex;
+		align-items: flex-start;
+		gap: 8px;
+		padding: 12px;
+		border: 1px solid var(--wp-components-color-gray-300, #ddd);
+		border-radius: 2px;
+		background: var(--wp-components-color-gray-100, #f6f7f7);
+	}
+
+	.mf-conditional-modal__rule-handle {
+		padding-top: 28px; // align with first field label
+		color: var(--wp-components-color-gray-600, #949494);
+		cursor: grab;
+		flex-shrink: 0;
+	}
+
+	.mf-conditional-modal__rule-fields {
+		flex: 1;
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr;
+		gap: 8px;
+		align-items: end;
+	}
+
+	.mf-conditional-modal__rule-actions {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding-top: 24px;
+		flex-shrink: 0;
+	}
+
+	.mf-conditional-modal__add-rule {
+		align-self: flex-start;
+	}
+
+	.mf-conditional-modal__footer {
+		display: flex;
+		justify-content: flex-end;
+		padding-top: 16px;
+		border-top: 1px solid var(--wp-components-color-gray-300, #ddd);
+		margin-top: 8px;
+	}
+}
