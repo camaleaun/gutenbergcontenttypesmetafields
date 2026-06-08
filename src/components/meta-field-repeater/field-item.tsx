@@ -119,6 +119,7 @@ export function FieldItem( { field, allFields, initialExpanded = false, onChange
 			{ /* ---- Header ---- */ }
 			<div className="mf-field-item__header">
 				<button
+					type="button"
 					className="mf-field-item__drag-handle"
 					{ ...attributes }
 					{ ...listeners }
@@ -131,6 +132,7 @@ export function FieldItem( { field, allFields, initialExpanded = false, onChange
 				</button>
 
 				<button
+					type="button"
 					className="mf-field-item__toggle"
 					onClick={ () => setExpanded( ( v ) => ! v ) }
 					aria-expanded={ expanded }
