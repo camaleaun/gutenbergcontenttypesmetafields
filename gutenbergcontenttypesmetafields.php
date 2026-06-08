@@ -23,6 +23,7 @@ add_action( 'init', function (): void {
 	require_once __DIR__ . '/lib/sections.php';
 	require_once __DIR__ . '/lib/sanitize.php';
 	require_once __DIR__ . '/lib/js.php';
+	require_once __DIR__ . '/lib/meta-box.php';
 }, 5 );
 
 // Enqueue the compiled JS bundle on the content-types admin page.
