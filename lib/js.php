@@ -1,20 +1,15 @@
 <?php
 /**
- * Applies the meta field configuration at runtime.
- *
- * Uses the `add_meta_fields_{post_type}` action to remove or keep meta fieldes
- * based on the values stored in _gct_meta for the post type record.
- *
- * This demonstrates the real-world effect of the PoC: the settings saved
- * in the content-types admin actually influence WordPress behaviour.
+ * Runtime effects + export/schema filter hooks for the Meta Fields PoC.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// ---- Runtime: apply meta field visibility -----------------------------------
+
 add_action( 'init', function (): void {
-	// Apply meta field visibility for every registered user post type.
 	$records = get_posts( array(
 		'post_type'        => 'wp_user_post_type',
 		'post_status'      => 'publish',
@@ -27,12 +22,10 @@ add_action( 'init', function (): void {
 		$slug = $record->post_name;
 		$meta = gct_get_record_meta( $record->ID );
 
-		// Default values match field definitions.
 		$show_excerpt       = isset( $meta['mf_excerpt'] )       ? (bool) $meta['mf_excerpt']       : true;
 		$show_custom_fields = isset( $meta['mf_custom_fields'] ) ? (bool) $meta['mf_custom_fields'] : false;
 		$show_comments      = isset( $meta['mf_comments'] )      ? (bool) $meta['mf_comments']      : true;
 
-		// Use a closure to capture $slug and settings for each post type.
 		add_action(
 			"add_meta_fields_{$slug}",
 			static function () use ( $slug, $show_excerpt, $show_custom_fields, $show_comments ) {
@@ -49,4 +42,53 @@ add_action( 'init', function (): void {
 			}
 		);
 	}
-}, 20 ); // After post types are registered (priority 10).
+}, 20 );
+
+// ---- Export: include mf_fields in the exported post type data ---------------
+
+/**
+ * Adds the meta_fields array to each exported post type.
+ *
+ * @param array<string,mixed> $pt     Normalized post type data.
+ * @param WP_Post             $record Raw post record.
+ */
+add_filter( 'gct_export_post_type', function ( array $pt, WP_Post $record ): array {
+	$raw_meta = get_post_meta( $record->ID, '_gct_meta', true );
+	if ( ! $raw_meta ) {
+		return $pt;
+	}
+	$meta = json_decode( $raw_meta, true );
+	if ( ! is_array( $meta ) || empty( $meta['mf_fields'] ) ) {
+		return $pt;
+	}
+	$pt['meta_fields'] = $meta['mf_fields'];
+	return $pt;
+}, 10, 2 );
+
+// ---- Export: extend the JSON Schema with meta_fields property ---------------
+
+add_filter( 'gct_export_schema', function ( array $schema ): array {
+	if ( ! isset( $schema['properties']['post_types']['items']['properties'] ) ||
+		! is_array( $schema['properties']['post_types']['items']['properties'] ) ) {
+		return $schema;
+	}
+	$schema['properties']['post_types']['items']['properties']['meta_fields'] = array(
+		'type'        => 'array',
+		'description' => 'Meta fields configured for this post type.',
+		'items'       => array(
+			'type'       => 'object',
+			'properties' => array(
+				'id'              => array( 'type' => 'string' ),
+				'label'           => array( 'type' => 'string' ),
+				'name'            => array( 'type' => 'string' ),
+				'objectType'      => array( 'type' => 'string', 'enum' => array( 'field', 'tab', 'accordion', 'endpoint' ) ),
+				'fieldType'       => array( 'type' => 'string' ),
+				'description'     => array( 'type' => 'string' ),
+				'fieldWidth'      => array( 'type' => 'string' ),
+				'revisionSupport' => array( 'type' => 'boolean' ),
+				'conditional'     => array( 'type' => 'object' ),
+			),
+		),
+	);
+	return $schema;
+} );
