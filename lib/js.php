@@ -68,13 +68,17 @@ add_filter( 'gct_export_post_type', function ( array $pt, WP_Post $record ): arr
 // ---- Export: extend the JSON Schema with meta_fields property ---------------
 
 add_filter( 'gct_export_schema', function ( array $schema ): array {
-	if ( ! isset( $schema['properties']['post_types']['items']['properties'] ) ||
-		! is_array( $schema['properties']['post_types']['items']['properties'] ) ) {
+	// The post_type definition lives under definitions.post_type (via $ref),
+	// NOT under properties.post_types.items.properties.
+	if ( ! isset( $schema['definitions']['post_type']['properties'] ) ||
+		! is_array( $schema['definitions']['post_type']['properties'] ) ) {
 		return $schema;
 	}
-	$schema['properties']['post_types']['items']['properties']['meta_fields'] = array(
+
+	// Add meta_fields to the post_type definition properties.
+	$schema['definitions']['post_type']['properties']['meta_fields'] = array(
 		'type'        => 'array',
-		'description' => 'Meta fields configured for this post type.',
+		'description' => 'Meta fields configured for this post type (gutenbergcontenttypesmetafields).',
 		'items'       => array(
 			'type'       => 'object',
 			'properties' => array(
@@ -87,8 +91,13 @@ add_filter( 'gct_export_schema', function ( array $schema ): array {
 				'fieldWidth'      => array( 'type' => 'string' ),
 				'revisionSupport' => array( 'type' => 'boolean' ),
 				'conditional'     => array( 'type' => 'object' ),
+				'typeConfig'      => array( 'type' => 'object' ),
 			),
 		),
 	);
+
+	// additionalProperties:false would reject meta_fields — relax it.
+	unset( $schema['definitions']['post_type']['additionalProperties'] );
+
 	return $schema;
 } );
