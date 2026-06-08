@@ -1,4 +1,4 @@
-import { useState } from '@wordpress/element';
+import { useState, useRef } from '@wordpress/element';
 import {
 	Button,
 	SelectControl,
@@ -7,7 +7,7 @@ import {
 	ToggleControl,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
-import { trash, chevronDown, chevronUp } from '@wordpress/icons';
+import { trash } from '@wordpress/icons';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { MetaField, ObjectType, FieldType, FieldWidth } from '../../types';
@@ -51,6 +51,24 @@ const FIELD_WIDTH_OPTIONS: { value: FieldWidth; label: string }[] = [
 	{ value: '25%',    label: '25%'    },
 ];
 
+/**
+ * Derives a DB-safe slug from a human label:
+ * 1. NFD normalize → strip combining diacritics (accents)
+ * 2. Lowercase
+ * 3. Replace non-alphanumeric runs with underscore
+ * 4. Strip leading/trailing underscores
+ *
+ * e.g. "Título do Campo" → "titulo_do_campo"
+ */
+function slugify( value: string ): string {
+	return value
+		.normalize( 'NFD' )
+		.replace( /[\u0300-\u036f]/g, '' )
+		.toLowerCase()
+		.replace( /[^a-z0-9]+/g, '_' )
+		.replace( /^_+|_+$/g, '' );
+}
+
 interface Props {
 	field      : MetaField;
 	allFields  : MetaField[];
@@ -62,6 +80,10 @@ interface Props {
 export function FieldItem( { field, allFields, onChange, onDuplicate, onRemove }: Props ) {
 	const [ expanded,        setExpanded        ] = useState( true );
 	const [ conditionalOpen, setConditionalOpen ] = useState( false );
+
+	// Once the user manually edits the Name/ID field, stop auto-generating from Label.
+	// Cleared again if the user empties Name/ID (re-enables auto-slug).
+	const nameTouched = useRef( field.name !== '' );
 
 	const {
 		attributes,
@@ -127,14 +149,13 @@ export function FieldItem( { field, allFields, onChange, onDuplicate, onRemove }
 						onClick={ () => setConditionalOpen( true ) }
 						aria-pressed={ hasConditional }
 					>
-						{ /* filter icon */ }
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" aria-hidden>
 							<path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
 						</svg>
 					</Button>
 					<Button
 						size="compact"
-						icon={ /* copy */ <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/></svg> }
+						icon={ <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/></svg> }
 						label={ __( 'Duplicate field', 'gutenbergcontenttypesmetafields' ) }
 						onClick={ onDuplicate }
 					/>
@@ -158,7 +179,14 @@ export function FieldItem( { field, allFields, onChange, onDuplicate, onRemove }
 							label={ <><span className="mf-required">*</span> { __( 'Label', 'gutenbergcontenttypesmetafields' ) }</> as any }
 							help={ __( 'Meta field label. It will be displayed on the Post edit page.', 'gutenbergcontenttypesmetafields' ) }
 							value={ field.label }
-							onChange={ ( v ) => set( { label: v } ) }
+							onChange={ ( v ) => {
+								if ( ! nameTouched.current ) {
+									// Mirror label → slug live while name is pristine.
+									set( { label: v, name: slugify( v ) } );
+								} else {
+									set( { label: v } );
+								}
+							} }
 						/>
 						<TextControl
 							__nextHasNoMarginBottom
@@ -166,7 +194,16 @@ export function FieldItem( { field, allFields, onChange, onDuplicate, onRemove }
 							label={ <><span className="mf-required">*</span> { __( 'Name / ID', 'gutenbergcontenttypesmetafields' ) }</> as any }
 							help={ __( 'Meta field name/key. Stored in the database. Use only Latin letters, numbers, - or _.', 'gutenbergcontenttypesmetafields' ) }
 							value={ field.name }
-							onChange={ ( v ) => set( { name: v.replace( /[^a-zA-Z0-9_-]/g, '' ) } ) }
+							onChange={ ( v ) => {
+								nameTouched.current = true;
+								set( { name: v.replace( /[^a-zA-Z0-9_-]/g, '' ) } );
+							} }
+							onBlur={ ( e ) => {
+								// Clearing the name field re-enables auto-slug from Label.
+								if ( e.target.value === '' ) {
+									nameTouched.current = false;
+								}
+							} }
 						/>
 					</div>
 
