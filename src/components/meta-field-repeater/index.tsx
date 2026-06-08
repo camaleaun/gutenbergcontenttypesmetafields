@@ -1,3 +1,4 @@
+import { useRef } from '@wordpress/element';
 import { Button } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { plus } from '@wordpress/icons';
@@ -28,6 +29,9 @@ interface Props {
 }
 
 export function MetaFieldRepeater( { fields, onChange }: Props ) {
+	// Tracks the id of the most-recently-added field so it renders expanded.
+	const justAddedId = useRef< string | null >( null );
+
 	const sensors = useSensors(
 		useSensor( PointerSensor ),
 		useSensor( KeyboardSensor, {
@@ -44,7 +48,11 @@ export function MetaFieldRepeater( { fields, onChange }: Props ) {
 		}
 	};
 
-	const addField = () => onChange( [ ...fields, makeDefaultField() ] );
+	const addField = () => {
+		const newField = makeDefaultField();
+		justAddedId.current = newField.id;
+		onChange( [ ...fields, newField ] );
+	};
 
 	const updateField = ( id: string, updated: MetaField ) =>
 		onChange( fields.map( ( f ) => f.id === id ? updated : f ) );
@@ -57,6 +65,7 @@ export function MetaFieldRepeater( { fields, onChange }: Props ) {
 			id   : crypto.randomUUID(),
 			name : fields[ idx ].name ? `${ fields[ idx ].name }_copy` : '',
 		};
+		// Duplicated field starts collapsed (user can review before editing).
 		const next = [ ...fields ];
 		next.splice( idx + 1, 0, clone );
 		onChange( next );
@@ -87,6 +96,7 @@ export function MetaFieldRepeater( { fields, onChange }: Props ) {
 							key={ field.id }
 							field={ field }
 							allFields={ fields }
+							initialExpanded={ justAddedId.current === field.id }
 							onChange={ ( updated ) => updateField( field.id, updated ) }
 							onDuplicate={ () => duplicateField( field.id ) }
 							onRemove={ () => removeField( field.id ) }

@@ -70,15 +70,16 @@ function slugify( value: string ): string {
 }
 
 interface Props {
-	field      : MetaField;
-	allFields  : MetaField[];
-	onChange   : ( f: MetaField ) => void;
-	onDuplicate: () => void;
-	onRemove   : () => void;
+	field           : MetaField;
+	allFields       : MetaField[];
+	initialExpanded?: boolean;
+	onChange        : ( f: MetaField ) => void;
+	onDuplicate     : () => void;
+	onRemove        : () => void;
 }
 
-export function FieldItem( { field, allFields, onChange, onDuplicate, onRemove }: Props ) {
-	const [ expanded,        setExpanded        ] = useState( true );
+export function FieldItem( { field, allFields, initialExpanded = false, onChange, onDuplicate, onRemove }: Props ) {
+	const [ expanded,        setExpanded        ] = useState( initialExpanded );
 	const [ conditionalOpen, setConditionalOpen ] = useState( false );
 
 	// Once the user manually edits the Name/ID field, stop auto-generating from Label.
