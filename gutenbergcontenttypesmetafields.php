@@ -26,25 +26,56 @@ add_action( 'init', function (): void {
 }, 5 );
 
 // Enqueue the compiled JS bundle on the content-types admin page.
+// Must run BEFORE the core plugin's React app mounts so gctRegisterSectionRenderer
+// is called before ExtensionSectionPanel first renders.
 add_action( 'admin_enqueue_scripts', function (): void {
-	$asset_file = __DIR__ . '/build/index.asset.php';
-	if ( ! file_exists( $asset_file ) ) {
+	// wp-scripts generates asset files named after the entry point, including extension.
+	$candidates = array(
+		__DIR__ . '/build/index.tsx.asset.php', // wp-scripts with .tsx entry
+		__DIR__ . '/build/index.asset.php',     // wp-scripts with .js entry
+	);
+	$asset_file = null;
+	foreach ( $candidates as $candidate ) {
+		if ( file_exists( $candidate ) ) {
+			$asset_file = $candidate;
+			break;
+		}
+	}
+	if ( ! $asset_file ) {
 		return;
 	}
 	$asset = require $asset_file;
+
+	// Derive the JS filename from the asset file name.
+	$js_base = basename( $asset_file, '.asset.php' ) . '.js';
+
+	// Ensure this script runs before the core plugin's React app.
+	// Add 'gct-flags' as an explicit dependency so window._gctSectionRenderers exists.
+	$deps = array_merge( $asset['dependencies'], array( 'gct-flags' ) );
+	$deps = array_unique( $deps );
+
 	wp_enqueue_script(
 		'gutenbergcontenttypesmetafields',
-		plugins_url( 'build/index.js', __FILE__ ),
-		$asset['dependencies'],
+		plugins_url( 'build/' . $js_base, __FILE__ ),
+		$deps,
 		$asset['version'],
-		array( 'strategy' => 'defer' )
+		false // in <head> — must execute before the core React app deferred scripts
 	);
-	if ( file_exists( __DIR__ . '/build/index.css' ) ) {
-		wp_enqueue_style(
-			'gutenbergcontenttypesmetafields',
-			plugins_url( 'build/index.css', __FILE__ ),
-			array(),
-			$asset['version']
-		);
+
+	// CSS: check both naming conventions.
+	$css_candidates = array(
+		__DIR__ . '/build/style-index.tsx.css',
+		__DIR__ . '/build/index.css',
+	);
+	foreach ( $css_candidates as $css_file ) {
+		if ( file_exists( $css_file ) ) {
+			wp_enqueue_style(
+				'gutenbergcontenttypesmetafields',
+				plugins_url( 'build/' . basename( $css_file ), __FILE__ ),
+				array(),
+				$asset['version']
+			);
+			break;
+		}
 	}
-} ); // Before priority 10 so sections are registered before gct_get_post_type_form_sections() is called.
+} );

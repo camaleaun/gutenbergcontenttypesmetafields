@@ -40,18 +40,30 @@ interface SectionRendererProps {
 // The core plugin exposes this hook (added in extensions.php) so third-party
 // plugins can mount their own React trees inside a section body.
 function register() {
-	if ( typeof window.gctRegisterSectionRenderer === 'function' ) {
-		window.gctRegisterSectionRenderer( 'meta_fields', ( container, { meta, onChange } ) => {
-			const fields: MetaField[] = Array.isArray( meta.mf_fields ) ? meta.mf_fields as MetaField[] : [];
-			const root = createRoot( container );
-			root.render(
-				<MetaFieldRepeater
-					fields={ fields }
-					onChange={ ( updated ) => onChange( 'mf_fields', updated ) }
-				/>
-			);
-		} );
-	}
+	if ( typeof window.gctRegisterSectionRenderer !== 'function' ) return;
+
+	// Keep a single React root per container element.
+	// The renderer is called on every parent render — we must reuse the root.
+	const roots = new WeakMap< HTMLElement, ReturnType< typeof createRoot > >();
+
+	window.gctRegisterSectionRenderer( 'meta_fields', ( container, { meta, onChange } ) => {
+		const fields: MetaField[] = Array.isArray( meta.mf_fields )
+			? ( meta.mf_fields as MetaField[] )
+			: [];
+
+		let root = roots.get( container );
+		if ( ! root ) {
+			root = createRoot( container );
+			roots.set( container, root );
+		}
+
+		root.render(
+			<MetaFieldRepeater
+				fields={ fields }
+				onChange={ ( updated ) => onChange( 'mf_fields', updated ) }
+			/>
+		);
+	} );
 }
 
 // Register immediately if the hook is already available, or wait for it.
