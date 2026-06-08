@@ -11,7 +11,9 @@ import { trash } from '@wordpress/icons';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { MetaField, ObjectType, FieldType, FieldWidth } from '../../types';
+import { makeDefaultTypeConfig } from '../../types';
 import { ConditionalModal } from '../conditional-modal';
+import { FieldTypeConfigPanel } from '../field-type-config';
 
 const OBJECT_TYPE_OPTIONS: { value: ObjectType; label: string }[] = [
 	{ value: 'field',     label: __( 'Field',     'gutenbergcontenttypesmetafields' ) },
@@ -227,9 +229,18 @@ export function FieldItem( { field, allFields, initialExpanded = false, onChange
 							help={ __( 'Defines how the field is displayed on the Post edit page.', 'gutenbergcontenttypesmetafields' ) }
 							value={ field.fieldType }
 							options={ FIELD_TYPE_OPTIONS }
-							onChange={ ( v ) => set( { fieldType: v as FieldType } ) }
+							onChange={ ( v ) => {
+								const newType = v as FieldType;
+								set( { fieldType: newType, typeConfig: makeDefaultTypeConfig( newType ) } );
+							} }
 						/>
 					</div>
+
+					<FieldTypeConfigPanel
+						fieldType={ field.fieldType }
+						config={ field.typeConfig }
+						onChange={ ( c ) => set( { typeConfig: c } ) }
+					/>
 
 					<TextareaControl
 						__nextHasNoMarginBottom
