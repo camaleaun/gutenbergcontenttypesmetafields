@@ -49,9 +49,13 @@ add_action( 'admin_enqueue_scripts', function (): void {
 	// Derive the JS filename from the asset file name.
 	$js_base = basename( $asset_file, '.asset.php' ) . '.js';
 
-	// Ensure this script runs before the core plugin's React app.
-	// Add 'gct-flags' as an explicit dependency so window._gctSectionRenderers exists.
-	$deps = array_merge( $asset['dependencies'], array( 'gct-flags' ) );
+	// Add 'gct-flags' as a dependency only when it is already registered
+	// (i.e. we are on the content-types admin page and the core plugin is active).
+	// Avoids the "dependency not registered" notice on other admin pages.
+	$deps = $asset['dependencies'];
+	if ( wp_script_is( 'gct-flags', 'registered' ) ) {
+		$deps[] = 'gct-flags';
+	}
 	$deps = array_unique( $deps );
 
 	wp_enqueue_script(
